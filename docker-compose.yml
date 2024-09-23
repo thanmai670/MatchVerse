@@ -12,7 +12,7 @@ services:
     ports:
       - '3001:3001'
     environment:
-      - RAPIDAPI_KEY=26cf074ea9mshf93635dd0113e6bp109dbdjsn40dcb44be52e
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
