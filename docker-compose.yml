@@ -1,0 +1,135 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:6-alpine
+    ports:
+      - '6379:6379'
+    command: ["redis-server", "--appendonly", "yes"]
+
+  job-fetcher-service:
+    build:
+      context: ./job-fetcher-service
+    ports:
+      - '3001:3001'
+    environment:
+      - RAPIDAPI_KEY=26cf074ea9mshf93635dd0113e6bp109dbdjsn40dcb44be52e
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+    networks:
+      - default
+
+  resume-analyzer-service:
+    build:
+      context: ./resume-analyzer-service
+    ports:
+      - '3002:3002'
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+    networks:
+      - default
+
+  matching-engine-service:
+    build:
+      context: ./matching-engine-service
+    ports:
+      - '3003:3003'
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OLLAMA_BASE_URL=http://ollama-service:11434
+    depends_on:
+      - redis
+      - ollama-service
+    networks:
+      - default
+
+  notification-service:
+    build:
+      context: ./notification-service
+    ports:
+      - '3004:3004'
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+    depends_on:
+      - redis
+    networks:
+      - default
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - '80:80'
+    depends_on:
+      - job-fetcher-service
+      - resume-analyzer-service
+      - matching-engine-service
+      - notification-service
+    networks:
+      - default
+
+  ollama-service:
+    image: ollama/ollama:latest
+    container_name: ollama_service
+    ports:
+      - '7869:11434'
+    volumes:
+      - ./ollama/ollama:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    tty: true
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - default
+
+  ollama-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ollama-webui
+    depends_on:
+      - ollama-service
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./ollama/ollama-webui:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URLS=http://host.docker.internal:7869
+      - ENV=dev
+      - WEBUI_AUTH=False
+      - WEBUI_NAME=valiantlynx AI
+      - WEBUI_URL=http://localhost:8080
+      - WEBUI_SECRET_KEY=t0p-s3cr3t
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+    networks:
+      - default
+  
+  maildev:
+    image: maildev/maildev
+    container_name: maildev
+    ports:
+      - '1025:1025' # SMTP port
+      - '1080:1080' # Web interface
+    networks:
+      - default
+
+volumes:
+  redis-data:
+
+networks:
+  default:

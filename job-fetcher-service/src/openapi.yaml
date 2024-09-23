@@ -1,0 +1,13 @@
+openapi: 3.0.0
+info:
+  title: Job Fetcher Service API
+  version: 1.0.0
+paths:
+  /fetch-jobs:
+    get:
+      summary: Manually trigger job fetching
+      responses:
+        '200':
+          description: Jobs fetched successfully
+servers:
+  - url: http://localhost:3001

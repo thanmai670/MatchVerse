@@ -1,0 +1,7 @@
+openapi: 3.0.0
+info:
+  title: Matching Engine Service API
+  version: 1.0.0
+paths: {}
+servers:
+  - url: http://localhost:3003

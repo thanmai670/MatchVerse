@@ -1,0 +1,23 @@
+openapi: 3.0.0
+info:
+  title: Resume Analyzer Service API
+  version: 1.0.0
+paths:
+  /upload-resume:
+    post:
+      summary: Upload a resume for analysis
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                resume:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Resume analyzed successfully
+servers:
+  - url: http://localhost:3002
