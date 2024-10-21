@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 dotenv.config();
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const EMBEDDING_API_URL = process.env.EMBEDDING_API_URL;  // Embedding API endpoint
 
 export const fetchJobs = async () => {
   const url = 'https://linkedin-api8.p.rapidapi.com/search-jobs-v2';
@@ -25,6 +26,7 @@ export const fetchJobs = async () => {
     const response = await axios.get(url, { headers, params });
     const jobs = response.data?.data || [];
     console.log(`Fetched ${jobs.length} jobs`);
+    
     for (const job of jobs) {
       const jobData: JobData = {
         id: uuidv4(),
@@ -34,16 +36,46 @@ export const fetchJobs = async () => {
         description: job.description,
         datePosted: job.datePosted,
       };
-      console.log('Job data prepared');
-      await publishJob(jobData);
+
+      // Create embeddings for different sections of the job
+      const embeddings = await createJobEmbeddings({
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        description: job.description,
+      },jobData);
+
+      // Include embeddings in the jobData to be published
+      const jobWithEmbeddings = {
+        ...jobData,
+        embeddings,
+      };
+
+      await publishJob(jobWithEmbeddings);
     }
   } catch (error) {
     console.error('Error fetching or publishing jobs:', error);
   }
 };
 
+
+const createJobEmbeddings = async (sections: Record<string, string>, metadata: Record<string, any>) => {
+  try {
+    const response = await axios.post(`http://embedding-api-service:5500/api/embed`, {
+      entity_type: 'job',  // Include entity_type for job
+      sections,
+      metadata  
+    });
+
+    return response.data.embeddings;
+  } catch (error) {
+    console.error('Error generating embeddings:', error);
+    return {};
+  }
+};
+
+
 export const scheduleJobFetching = () => {
-  // Fetch jobs immediately and then every hour
   fetchJobs();
   setInterval(fetchJobs, 3600000);
 };

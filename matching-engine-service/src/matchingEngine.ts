@@ -12,7 +12,9 @@ dotenv.config();
 //   host: process.env.OLLAMA_BASE_URL || 'http://ollama-service:11434',
 // });
 
-const replicate = new Replicate();
+const replicate = new Replicate({
+  auth: '***REMOVED***',
+});
 
 export const matchJobAndResume = async (jobData: JobData, resumeData: ResumeData) => {
   console.log('Matching job and resume preparing prompt');
@@ -28,28 +30,12 @@ export const matchJobAndResume = async (jobData: JobData, resumeData: ResumeData
     Provide the score and reasoning in JSON format like {"score": 0, "reasoning": "..."}.
   `;
 
-
-
-  // const res = await ollama.generate({model:'llama3.1',
-  //  prompt:prompt
-  // });
-
-  // const response = JSON.parse(res.response);
-  // console.log('Match result received', response);
-
-  // const result = JSON.parse(response.message.content) as MatchResult;
-
-  // result.jobId = jobData.id;
-  // result.resumeId = resumeData.id;
-
-  // console.log('Match result received');
-
   const input = {
     prompt: prompt,
     max_tokens: 1024,
   };
 
   const output = await replicate.run("meta/meta-llama-3.1-405b-instruct", { input });
-
+  console.log('output', output);
   await publishMatchResult(output);
 };
