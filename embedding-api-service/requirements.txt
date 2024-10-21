@@ -1,0 +1,9 @@
+qdrant-client[fastembed]
+numpy
+fastapi
+uvicorn
+gunicorn
+sentence-transformers
+transformers
+flask
+flask-cors

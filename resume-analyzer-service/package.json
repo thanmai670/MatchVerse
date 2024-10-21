@@ -27,6 +27,7 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
+    "@qdrant/js-client-rest": "^1.11.0",
     "ioredis": "^5.4.1",
     "js-yaml": "^4.1.0",
     "uuid": "^10.0.0"
