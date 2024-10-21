@@ -13,7 +13,7 @@ dotenv.config();
 // });
 
 const replicate = new Replicate({
-  auth: '***REMOVED***',
+  auth: '',
 });
 
 export const matchJobAndResume = async (jobData: JobData, resumeData: ResumeData) => {
