@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from vector_logic import (
     add_resume, update_resume, delete_resume, search_resumes, create_resume_collection,
-    add_job, update_job, delete_job, search_jobs, create_job_collection
+    add_job, update_job, delete_job, search_jobs, create_job_collection,weighted_search,rerank_results,task_based_search
 )
 
 class JobData(BaseModel):
