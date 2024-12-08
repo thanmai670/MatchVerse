@@ -12,7 +12,7 @@ services:
     ports:
       - '3001:3001'
     environment:
-      - RAPIDAPI_KEY=1b12c4c42amshb48bc2f9822d5fcp1a4030jsndc5c7aac61ed
+      - RAPIDAPI_KEY="${RAPIDAPI_KEY}"
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
@@ -28,6 +28,7 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REPLICATE_API_TOKEN="${REPLICATE_API_TOKEN}"
     depends_on:
       - redis
     networks:

@@ -28,8 +28,10 @@
   },
   "dependencies": {
     "@qdrant/js-client-rest": "^1.11.0",
+    "axios": "^1.7.9",
     "ioredis": "^5.4.1",
     "js-yaml": "^4.1.0",
+    "replicate": "^1.0.1",
     "uuid": "^10.0.0"
   }
 }

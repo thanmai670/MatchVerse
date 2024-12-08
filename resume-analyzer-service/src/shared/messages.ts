@@ -9,7 +9,18 @@ export interface JobData {
   
   export interface ResumeData {
     id: string;
-    content: string;
+    personal_information: {
+      name: string;
+      email: string;
+      phone: string;
+      github: string;
+      linkedin: string;
+    };
+    skills: string[];
+    education: string[];
+    work_experience: string[];
+    projects: string[];
+    certifications: string[];
   }
   
   export interface MatchResult {
