@@ -167,6 +167,33 @@ services:
       - redis
     networks:
       - default
+  
+  postgresql:
+    image: bitnami/postgresql:latest
+    environment:
+      - POSTGRESQL_DATABASE=bitnami_keycloak
+      - POSTGRESQL_USER=bn_keycloak
+      - POSTGRESQL_PASSWORD=your_postgres_password
+    # Store data persistently
+    volumes:
+      - ./postgresql_data:/bitnami/postgresql
+
+  keycloak:
+    image: bitnami/keycloak:latest
+    environment:
+      # This enables creation of an admin user
+      - KEYCLOAK_CREATE_ADMIN_USER=true
+      - KEYCLOAK_ADMIN_USER=admin
+      - KEYCLOAK_ADMIN_PASSWORD=adminpassword
+      # Point Keycloak to the PostgreSQL host and credentials
+      - KEYCLOAK_DATABASE_HOST=postgresql
+      - KEYCLOAK_DATABASE_USER=bn_keycloak
+      - KEYCLOAK_DATABASE_PASSWORD=your_postgres_password
+      - KEYCLOAK_DATABASE_NAME=bitnami_keycloak
+    depends_on:
+      - postgresql
+    ports:
+      - "8080:8080"
 
 volumes:
   redis-data:

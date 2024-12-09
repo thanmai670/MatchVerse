@@ -97,7 +97,18 @@ const generateEmbeddingsForSections = async (resumeData: ResumeData) => {
   };
 
   
-  const response = await axios.post(`http://embedding-api-service:5500/api/embed`, { sections });
+  const response = await axios.post(`http://embedding-api-service:5500/api/embed`, {
+    entity_type: 'resume',
+    sections: sections,
+    metadata: {
+      resume_id: resumeData.id,
+      name: resumeData.personal_information.name,
+      email: resumeData.personal_information.email,
+      phone: resumeData.personal_information.phone,
+      github: resumeData.personal_information.github,
+      linkedin: resumeData.personal_information.linkedin
+    }
+  });
   return response.data.embeddings;
 };
 

@@ -31,7 +31,7 @@ RUN echo "|--> Fetching model files (all-mpnet-base-v2)" && \
 # On x86_64, also CPU-only by default. Adjust if you want GPU support on x86_64.
 COPY requirements.txt ./
 RUN echo "|--> Installing Python packages" && \
-    pip install --no-cache-dir torch torchvision torchaudio && \
+    pip install --no-cache-dir torch && \
     pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /usr/src/app
