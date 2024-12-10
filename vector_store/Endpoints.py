@@ -1,16 +1,19 @@
 import logging
 import traceback
-from fastapi import APIRouter, HTTPException
+from typing import Any, Dict, List
+from fastapi import APIRouter, HTTPException, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from vector_logic import (
     add_resume, update_resume, delete_resume, search_resumes, create_resume_collection,
-    add_job, update_job, delete_job, search_jobs, create_job_collection,weighted_search,rerank_results,task_based_search
+    add_job, update_job, delete_job, search_jobs, create_job_collection,weighted_search,task_based_search
 )
 
 class JobData(BaseModel):
     job_id: str
-    embeddings: dict  # Embeddings for different sections of the job
-    metadata: dict  # Metadata about the job (e.g., title, company, location, etc.)
+    ids: List[str]
+    vectors: List[List[float]]
+    payloads: List[Dict[str, Any]]# Metadata about the job (e.g., title, company, location, etc.)
 
 class JobSearchRequest(BaseModel):
     query_embedding: list  # The embedding for the search query
@@ -22,8 +25,9 @@ router = APIRouter()
 # Data models for requests
 class ResumeData(BaseModel):
     resume_id: str
-    embeddings: dict  # Embeddings for different sections
-    metadata: dict  # Metadata about the resume (e.g., name, experience, etc.)
+    ids: List[str]
+    vectors: List[List[float]]
+    payloads: List[Dict[str, Any]]
 
 class SearchRequest(BaseModel):
     query_embedding: list  # The embedding for the search query
@@ -44,6 +48,8 @@ class TaskBasedSearchRequest(BaseModel):
     resume_embeddings: dict  # Embeddings of the resume sections (e.g., {"experience": [0.22, 0.85, 0.47]})
 
 
+
+
 # Endpoint to initialize collection
 @router.post("/collection/create")
 async def initialize_collection():
@@ -58,11 +64,16 @@ async def initialize_collection():
 @router.post("/resume/add")
 async def add_resume_endpoint(resume_data: ResumeData):
     try:
-        add_resume(resume_data.resume_id, resume_data.embeddings, resume_data.metadata)
+        add_resume(
+            resume_id=resume_data.resume_id,
+            ids=resume_data.ids,
+            vectors=resume_data.vectors,
+            payloads=resume_data.payloads
+        )
         return {"message": f"Resume {resume_data.resume_id} added successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        logging.error(f"Error adding resume: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"An error occurred while adding the resume: {str(e)}")
 
 # Endpoint to update a resume section
 @router.put("/resume/update/{resume_id}/{section}")
@@ -95,13 +106,13 @@ async def search_resume_endpoint(search_request: SearchRequest):
 
 
 # Endpoint for reranking search results using BERT/T5
-@router.post("/resume/rerank")
-async def rerank_results_endpoint(rerank_request: RerankRequest):
-    try:
-        reranked = rerank_results(rerank_request.job_description, rerank_request.resume_results)
-        return {"reranked_results": reranked}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @router.post("/resume/rerank")
+# async def rerank_results_endpoint(rerank_request: RerankRequest):
+#     try:
+#         reranked = rerank_results(rerank_request.job_description, rerank_request.resume_results)
+#         return {"reranked_results": reranked}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 # Endpoint for weighted search
@@ -145,10 +156,15 @@ async def initialize_job_collection():
 @router.post("/job/add")
 async def add_job_endpoint(job_data: JobData):
     try:
-        add_job(job_data.job_id, job_data.embeddings, job_data.metadata)
+        add_job(
+            job_id=job_data.job_id,
+            ids=job_data.ids,
+            vectors=job_data.vectors,
+            payloads=job_data.payloads
+        )
         return {"message": f"Job {job_data.job_id} added successfully"}
     except Exception as e:
-        logging.error(f"Error adding job: {traceback.format_exc()}")  # Log the full error
+        logging.error(f"Error adding job: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="An error occurred while adding the job to the vector store")
 
 

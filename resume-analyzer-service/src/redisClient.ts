@@ -12,7 +12,7 @@ const redis = new Redis({
 export const publishResumeData = async (resumeData: ResumeData) => {
   try {
     await redis.publish('resume_channel', JSON.stringify(resumeData));
-    console.log('Published extracted resume:', resumeData);
+    // console.log('Published extracted resume:', resumeData);
   } catch (error) {
     console.error('Error publishing resume:', error);
   }

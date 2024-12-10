@@ -21,6 +21,7 @@ export interface JobData {
     work_experience: string[];
     projects: string[];
     certifications: string[];
+    unstructured_text_blocks: string[];
   }
   
   export interface MatchResult {

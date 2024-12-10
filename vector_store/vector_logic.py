@@ -1,3 +1,5 @@
+import logging
+from typing import Any, Dict, List
 import qdrant_client
 from qdrant_client.http import models as qdrant_models
 from transformers import pipeline
@@ -7,7 +9,7 @@ import uuid
 
 
 client = qdrant_client.QdrantClient(host='qdrant', port='6333')
-reranker_model = pipeline("text-classification", model="bert-base-uncased")
+# reranker_model = pipeline("text-classification", model="bert-base-uncased")
 
 # 1. Create Collection (to be called during system initialization)
 def create_resume_collection():
@@ -20,19 +22,21 @@ def create_resume_collection():
     )
 
 # 2. Add Resume
-def add_resume(resume_id: str, embeddings: dict, metadata: dict):
-    points = []
-    for section, vector in embeddings.items():
-        points.append(qdrant_models.PointStruct(
-            id=f"{resume_id}_{section}",
-            vector=vector,
-            payload={**metadata, "section": section}
-        ))
+def add_resume(resume_id: str, ids: List[str], vectors: List[List[float]], payloads: List[Dict[str, Any]]):
+    if not vectors:
+        logging.error(f"No valid embeddings to add for resume: {resume_id}")
+        return
+    formatted_ids = [str(uuid.UUID(id_str)) for id_str in ids]
 
     client.upsert(
         collection_name="ResumeCollection",
-        points=qdrant_models.Batch.construct(points=points)
+        points=qdrant_models.Batch(
+            ids=formatted_ids,
+            vectors=vectors,
+            payloads=payloads
+        )
     )
+
 
 # 3. Search Resumes
 def search_resumes(query_embedding, section: str, top_k: int = 10, metadata_filters: dict = None):
@@ -82,15 +86,15 @@ def delete_resume(resume_id: str):
     )
 
 # 6. Rerank Search Results using BERT/T5 (after initial cosine similarity search)
-def rerank_results(job_description, resume_results):
-    reranked = []
-    for result in resume_results:
-        resume_id = result.id
-        resume_text = result.payload.get('full_text', '')  # Assume full_text is stored
-        relevance_score = reranker_model(job_description, resume_text)[0]['score']
-        reranked.append((resume_id, relevance_score))
+# def rerank_results(job_description, resume_results):
+#     reranked = []
+#     for result in resume_results:
+#         resume_id = result.id
+#         resume_text = result.payload.get('full_text', '')  # Assume full_text is stored
+#         relevance_score = reranker_model(job_description, resume_text)[0]['score']
+#         reranked.append((resume_id, relevance_score))
     
-    return sorted(reranked, key=lambda x: x[1], reverse=True)
+    # return sorted(reranked, key=lambda x: x[1], reverse=True)
 
 # 7. Weighted Search (use different weights for different resume sections)
 def weighted_search(job_embedding, resume_embeddings, weights):
@@ -122,32 +126,19 @@ def create_job_collection():
     )
 
 # Add a job to the collection
-def add_job(job_id: str, embeddings: dict, metadata: dict):
-    points = []
-    ids = []
-    vectors = []
-
-    for section, vector in embeddings.items():
-        point_id = str(uuid.uuid4())  # Generate a unique UUID for each section
-        ids.append(point_id)  # Add the point ID to the list of IDs
-        vectors.append(vector)  # Append the vector to the list of vectors
-
-        # Each point payload must be a dictionary of metadata
-        points.append({
-            "section": section,
-            **metadata  # Merge metadata into payload
-        })
-
-    # Upsert the job data into the collection with the IDs and vectors
+def add_job(job_id: str, ids: List[str], vectors: List[List[float]], payloads: List[Dict[str, Any]]):
+    if not vectors:
+        logging.error(f"No valid embeddings to add for job: {job_id}")
+        return
+    formatted_ids = [str(uuid.UUID(id_str)) for id_str in ids]
     client.upsert(
         collection_name="JobCollection",
         points=qdrant_models.Batch(
-            ids=ids,
-            vectors=vectors,  # Pass the vectors (embeddings) separately
-            payloads=points  # Pass the payload separately
+            ids=formatted_ids,
+            vectors=vectors,
+            payloads=payloads
         )
     )
-
 
 # Search for jobs based on query embedding
 def search_jobs(query_embedding, section: str, top_k: int = 10, metadata_filters: dict = None):

@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 import traceback
-
+import uuid
 import torch
 import flask
 from flask import request, jsonify
@@ -50,53 +50,61 @@ def get_embeddings():
     data = request.get_json()
     
     # Extract sections and entity type (job or resume) from the request
-    entity_type = data.get("entity_type")  # 'job' or 'resume'
+    entity_type = data.get("entity_type")
     sections = data.get("sections", {})
-    metadata = data.get("metadata", {})  # Assume metadata comes in with the request (e.g., title, company, etc.)
+    metadata = data.get("metadata", {})
     
     if not entity_type or not sections:
         return jsonify({"error": "Invalid request, 'entity_type' and 'sections' are required"}), 400
     
     result = {}
+    ids = []  # List of unique IDs for Qdrant points
+    vectors = []  # Embedding vectors
+    payloads = []  # Payloads for each embedding
+
     for section_name, text in sections.items():
         if not isinstance(text, str):
-            text = str(text)  # Convert any non-string (like integers) to string
+            text = str(text)
+        
         embedding = embed_single_text(text)
-        # logging.debug(f"embedding : {embedding}")
-        result[section_name] = embedding
-
-    # Send the embeddings to the appropriate vector store endpoint
-    try:
-        if entity_type == "job":
-            # Send embeddings to job add endpoint
-            response = requests.post("http://vector_store:5200/job/add", json={
-                "job_id": metadata.get("job_id", "unknown"),
-                "embeddings": result,
-                "metadata": metadata
+        if embedding:
+            # Use the appropriate ID (resume_id or job_id) depending on entity_type
+            unique_id = str(uuid.uuid4())
+            ids.append(unique_id)  # Use job_id or resume_id + section name as the unique ID
+            vectors.append(embedding)
+            payloads.append({
+                "section": section_name,
+                **metadata  # Add all metadata from the request
             })
-        elif entity_type == "resume":
-            # Send embeddings to resume add endpoint
-            response = requests.post("http://vector_store:5200/resume/add", json={
-                "resume_id": metadata.get("resume_id", "unknown"),
-                "embeddings": result,
-                "metadata": metadata
-            })
+            result[section_name] = embedding
         else:
-            return jsonify({"error": "Invalid entity_type"}), 400
+            logging.error(f"Failed to generate embedding for section: {section_name} | Text: {text}")
+
+    try:
+        response = requests.post(f"http://vector_store:5200/{entity_type}/add", json={
+            f"{entity_type}_id": metadata.get(f"{entity_type}_id", "unknown"),
+            "ids": ids,  # New Field: IDs for Qdrant
+            "vectors": vectors,  # New Field: Embedding vectors for Qdrant
+            "payloads": payloads  # New Field: Payloads for Qdrant
+        })
         
         if response.status_code != 200:
+            logging.error(f"Failed to store embedding in vector store. Status: {response.status_code} | Response: {response.json()}")
             return jsonify({"error": "Failed to add embeddings to vector store"}), 500
 
     except requests.exceptions.RequestException as e:
+        logging.error(f"Exception during request to vector store: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
     return jsonify({"entity_type": entity_type, "embeddings": result})
 
 
 
+
 def embed_single_text(text):
     try:
         embedding = embd.encode([text])[0].tolist()
+        # print(embedding)
         return embedding
     except Exception:
         logging.error(traceback.format_exc())
@@ -124,3 +132,14 @@ def get_batched_embeddings():
 
     return jsonify({"entity_type": entity_type, "embeddings": result})
 
+
+@app.route("/api/query-embed", methods=["POST"])
+def get_query_embedding():
+    data = request.get_json()
+    query_text = data.get("query_text", "")
+    
+    if not query_text:
+        return jsonify({"error": "Query text is required"}), 400
+        
+    embedding = embed_single_text(query_text)
+    return jsonify({"embedding": embedding})
