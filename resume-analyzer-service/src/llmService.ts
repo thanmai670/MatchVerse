@@ -25,7 +25,6 @@ const replicate = new Replicate({
 
 export const extractSectionsUsingLLM = async (chunks: string[]): Promise<LLMResponse> => {
   const chunkLimit = 3000; // Limit the chunk size to avoid LLM truncation
-  console.log('Received chunks:', chunks);
   // Initialize the merged response with correct types
   let mergedResponse: LLMResponse = {
     personal_information: { name: '', email: '', phone: '', github: '', linkedin: '' },
@@ -42,6 +41,7 @@ export const extractSectionsUsingLLM = async (chunks: string[]): Promise<LLMResp
 
     const prompt = `
       You are an expert in extracting information from resumes. Your task is to extract and structure the following sections from the provided resume text. 
+      See initially you will be given a chunk of text from a resume. You need to extract the following sections from the resume text and in the end when there is no more text to extract, return the output in the format specified below.
       Please strictly follow the format below and return **only the JSON output**. Do not include any explanations or extra text.
       Return the output **only** in this JSON format:
       {

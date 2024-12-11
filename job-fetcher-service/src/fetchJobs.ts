@@ -9,14 +9,13 @@ dotenv.config();
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const EMBEDDING_API_URL = process.env.EMBEDDING_API_URL;  // Embedding API endpoint
 
-export const fetchJobs = async () => {
+export const fetchJobs = async (params: {
+  keywords: string;
+  locationId: string;
+  datePosted: string;
+  sort: string;
+}) => {
   const url = 'https://linkedin-api8.p.rapidapi.com/search-jobs-v2';
-  const params = {
-    keywords: 'Fullstack developer',
-    locationId: '101282230',
-    datePosted: 'past24Hours',
-    sort: 'mostRecent',
-  };
   const headers = {
     'x-rapidapi-host': 'linkedin-api8.p.rapidapi.com',
     'x-rapidapi-key': RAPIDAPI_KEY!,
@@ -25,8 +24,7 @@ export const fetchJobs = async () => {
   try {
     const response = await axios.get(url, { headers, params });
     const jobs = response.data?.data || [];
-    console.log(`Fetched ${jobs.length} jobs`);
-    
+    console.log('Fetched jobs:', jobs);
     for (const job of jobs) {
       const jobData: JobData = {
         id: uuidv4(),
@@ -59,6 +57,14 @@ export const fetchJobs = async () => {
 };
 
 
+export const fetchJobDetails = async (jobId: string) => {
+  const url = `https://linkedin-api8.p.rapidapi.com/job-details/${jobId}`;
+  const headers = {
+    'x-rapidapi-host': 'linkedin-api8.p.rapidapi.com',
+    'x-rapidapi-key': RAPIDAPI_KEY!,
+  };}
+
+
 const createJobEmbeddings = async (sections: Record<string, string>, metadata: Record<string, any>) => {
   try {
     const response = await axios.post(`http://embedding-api-service:5500/api/embed`, {
@@ -75,7 +81,12 @@ const createJobEmbeddings = async (sections: Record<string, string>, metadata: R
 };
 
 
-export const scheduleJobFetching = () => {
-  fetchJobs();
-  setInterval(fetchJobs, 3600000);
-};
+// export const scheduleJobFetching = () => {
+//   fetchJobs({
+//     keywords: 'Fullstack developer',
+//     locationId: '101282230',
+//     datePosted: 'past24Hours',
+//     sort: 'mostRecent',
+//   });
+//   setInterval(fetchJobs, 3600000);
+// };
