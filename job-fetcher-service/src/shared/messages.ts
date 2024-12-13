@@ -1,5 +1,6 @@
 export interface JobData {
     id: string;
+    jobId: string;
     title: string;
     company: string;
     location: string;

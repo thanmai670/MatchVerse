@@ -1,11 +1,12 @@
 export interface JobData {
-    id: string;
-    title: string;
-    company: string;
-    location: string;
-    description: string;
-    datePosted: string;
-  }
+  id: string;
+  jobId: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  datePosted: string;
+}
   
   export interface ResumeData {
     id: string;

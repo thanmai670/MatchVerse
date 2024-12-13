@@ -5,11 +5,16 @@ import * as swaggerUi from 'swagger-ui-express';
 import * as fs from 'fs';
 import * as path from 'path';
 import yaml from 'js-yaml'
-import { fetchJobs } from './fetchJobs';
+import { fetchJobs,getLocationId, getJobDetails } from './fetchJobs';
+import cors from 'cors';
+
 
 dotenv.config();
 
 const app = express();
+app.use(cors());
+app.use(express.json());
+
 const port = process.env.PORT || 3001;
 
 // Swagger setup
@@ -27,6 +32,30 @@ app.post('/fetch-jobs', async (req, res) => {
   } catch (error) {
     console.error('Error fetching jobs:', error);
     res.status(500).send('Error fetching jobs.');
+  }
+});
+
+app.post('/getLocationId',async(req,res)=>{
+  try{
+    const{locationName}=req.body;
+    const locationId=await getLocationId(locationName); 
+    res.status(200).json(locationId);
+  }
+  catch(error){
+    console.error('Error fetching location id:', error);
+    res.status(500).send('Error fetching location id.');
+  }
+})
+
+
+app.post('/getJobDetails', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const jobDetails = await getJobDetails(id);
+    res.status(200).json(jobDetails);
+  } catch (error) {
+    console.error('Error fetching job details:', error);
+    res.status(500).send('Error fetching job details.');
   }
 });
 
