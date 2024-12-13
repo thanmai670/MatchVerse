@@ -50,8 +50,8 @@ app.post('/getLocationId',async(req,res)=>{
 
 app.post('/getJobDetails', async (req, res) => {
   try {
-    const { id } = req.body;
-    const jobDetails = await getJobDetails(id);
+    const { jobId } = req.body;
+    const jobDetails = await getJobDetails(jobId);
     res.status(200).json(jobDetails);
   } catch (error) {
     console.error('Error fetching job details:', error);

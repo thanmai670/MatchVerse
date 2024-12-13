@@ -173,6 +173,7 @@ export default function JobsPage() {
         const data = await response.json();
         const transformedJobs = Array.isArray(data.results) ? data.results.map((job: any) => ({
           id: job.id || '',
+          jobId:job.payload?.jobId || '',
           title: job.payload?.title || '',
           company: job.payload?.company || '',
           location: job.payload?.location || '',

@@ -76,6 +76,7 @@ def get_embeddings():
                 "section": section_name,
                 **metadata  # Add all metadata from the request
             })
+            print(f"Payloads: ${payloads}")
             result[section_name] = embedding
         else:
             logging.error(f"Failed to generate embedding for section: {section_name} | Text: {text}")
