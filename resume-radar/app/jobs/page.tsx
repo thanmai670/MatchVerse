@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import debounce from 'lodash/debounce';
 import { JobDetailsModal } from '@/components/JobDetailsModal';
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 import {
   Dialog,
@@ -110,17 +112,15 @@ interface JobSearchParams {
 }
 
 export default function JobsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('Fullstack developer');
-
-  // Selected job basics
   const [selectedJob, setSelectedJob] = useState<JobData | null>(null);
-  // Detailed job info
   const [selectedJobDetails, setSelectedJobDetails] = useState<JobDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
-
-  // State for indexing modal
   const [openIndexModal, setOpenIndexModal] = useState(false);
   const [tempSearchParams, setTempSearchParams] = useState<JobSearchParams>({
     keywords: 'Fullstack developer',
@@ -128,12 +128,10 @@ export default function JobsPage() {
     datePosted: 'past24Hours',
     sort: 'mostRecent'
   });
-
   const [tempLocationName, setTempLocationName] = useState('Berlin, Germany');
   const [tempKeywords, setTempKeywords] = useState('Fullstack developer');
   const [tempDatePosted, setTempDatePosted] = useState('past24Hours');
   const [tempSort, setTempSort] = useState('mostRecent');
-
   const [currentSearchParams, setCurrentSearchParams] = useState<JobSearchParams>({
     keywords: 'Fullstack developer',
     locationId: 'Munich',
@@ -199,6 +197,16 @@ export default function JobsPage() {
       debouncedSearchJobs.cancel();
     };
   }, [searchTerm, debouncedSearchJobs]);
+
+  // Handle authentication status
+  if (status === "loading") {
+    return <div>Loading...</div>
+  }
+
+  if (status === "unauthenticated") {
+    router.push("/login")
+    return null
+  }
 
   const indexLatestJobs = async (params: JobSearchParams) => {
     setLoading(true);

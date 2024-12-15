@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from vector_logic import (
     add_resume, update_resume, delete_resume, search_resumes, create_resume_collection,
-    add_job, update_job, delete_job, search_jobs, create_job_collection,weighted_search,task_based_search
+    add_job, update_job, delete_job, search_jobs, create_job_collection,weighted_search,task_based_search,fuzzy_search
 )
 
 class JobData(BaseModel):
@@ -46,6 +46,12 @@ class WeightedSearchRequest(BaseModel):
 class TaskBasedSearchRequest(BaseModel):
     job_tasks: dict  # Task embeddings (e.g., {"leadership": [0.44, 0.55, 0.66]})
     resume_embeddings: dict  # Embeddings of the resume sections (e.g., {"experience": [0.22, 0.85, 0.47]})
+
+class FuzzySearchRequest(BaseModel):
+    query_embedding: list  # The embedding for the search query
+    collection_name: str  # The collection to search in
+    top_k: int = 10  # Number of results to return
+    threshold: float = 0.8  # Similarity threshold for filtering results
 
 
 
@@ -193,6 +199,20 @@ async def delete_job_endpoint(job_id: str):
 async def search_job_endpoint(job_search_request: JobSearchRequest):
     try:
         results = search_jobs(job_search_request.query_embedding, job_search_request.section, job_search_request.top_k)
+        return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Endpoint for fuzzy search
+@router.post("/fuzzy_search")
+async def fuzzy_search_endpoint(fuzzy_search_request: FuzzySearchRequest):
+    try:
+        results = fuzzy_search(
+            fuzzy_search_request.query_embedding,
+            fuzzy_search_request.collection_name,
+            fuzzy_search_request.top_k,
+            fuzzy_search_request.threshold
+        )
         return {"results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

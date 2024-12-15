@@ -112,6 +112,20 @@ def task_based_search(job_tasks, resume_embeddings):
         task_scores[task] = search_resumes(task_embedding, "experience")  # Focus on experience section
     return task_scores
 
+# 9. Fuzzy Search (find similar items based on vector similarity)
+def fuzzy_search(query_embedding, collection_name: str, top_k: int = 10, threshold: float = 0.8):
+    # Perform the search
+    results = client.search(
+        collection_name=collection_name,
+        query_vector=query_embedding,
+        limit=top_k
+    )
+    
+    # Filter results based on a similarity threshold
+    filtered_results = [result for result in results if result.score >= threshold]
+    
+    return filtered_results
+
 
 ################################ JOBS SECTION #############################################
 
