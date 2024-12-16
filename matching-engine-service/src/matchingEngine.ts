@@ -27,43 +27,43 @@ export const matchJobAndResume = async (jobData: JobData, resumeData: ResumeData
       console.log(`Processing Job ID: ${jobId}, Resume ID: ${resumeId}`);
 
       // Vector search (e.g., weighted search)
-      const weightedResponse = await axios.post(`${VECTOR_STORE_URL}/resume/weighted_search`, {
-          job_embedding: jobData.embeddings,
-          resume_embeddings: resumeData.embeddings,
-          weights: {
-              skills: 0.7,
-              experience: 0.2,
-              education: 0.1,
-          },
-      });
-      const weightedScore = weightedResponse.data.weighted_score;
+    //   const weightedResponse = await axios.post(`${VECTOR_STORE_URL}/resume/weighted_search`, {
+    //       job_embedding: jobData.embeddings,
+    //       resume_embeddings: resumeData.embeddings,
+    //       weights: {
+    //           skills: 0.7,
+    //           experience: 0.2,
+    //           education: 0.1,
+    //       },
+    //   });
+    //   const weightedScore = weightedResponse.data.weighted_score;
 
       // Task-based search
-      const taskBasedResponse = await axios.post(`${VECTOR_STORE_URL}/resume/task_based_search`, {
-          job_tasks: jobData.embeddings,
-          resume_embeddings: resumeData.embeddings,
-      });
-      const taskSearchResults = taskBasedResponse.data.task_search_results;
+    //   const taskBasedResponse = await axios.post(`${VECTOR_STORE_URL}/resume/task_based_search`, {
+    //       job_tasks: jobData.embeddings,
+    //       resume_embeddings: resumeData.embeddings,
+    //   });
+    //   const taskSearchResults = taskBasedResponse.data.task_search_results;
 
       // Prepare the prompt for Replicate
-      const prompt = `
-          Analyze the following job-resume matching results and provide a final relevance score out of 10 and detailed reasoning.
+    //   const prompt = `
+    //       Analyze the following job-resume matching results and provide a final relevance score out of 10 and detailed reasoning.
 
-          Vector Search Results:
-          ${JSON.stringify({ weightedScore, taskSearchResults }, null, 2)}
+    //       Vector Search Results:
+    //       ${JSON.stringify({ weightedScore, taskSearchResults }, null, 2)}
 
-          Job Details:
-          ${JSON.stringify(jobData, null, 2)}
+    //       Job Details:
+    //       ${JSON.stringify(jobData, null, 2)}
 
-          Resume Details:
-          ${JSON.stringify(resumeData, null, 2)}
+    //       Resume Details:
+    //       ${JSON.stringify(resumeData, null, 2)}
 
-          Provide the score and reasoning in JSON format like {"score": 0, "reasoning": "..."}.
-      `;
+    //       Provide the score and reasoning in JSON format like {"score": 0, "reasoning": "..."}.
+    //   `;
 
-      const replicateOutput = await replicate.run('meta/meta-llama-3.1-405b-instruct', {
-          input: { prompt, max_tokens: 1024 },
-      });
+    //   const replicateOutput = await replicate.run('meta/meta-llama-3.1-405b-instruct', {
+    //       input: { prompt, max_tokens: 1024 },
+    //   });
 
       // // Final match result
       // const matchResult: MatchResult = {
@@ -73,10 +73,10 @@ export const matchJobAndResume = async (jobData: JobData, resumeData: ResumeData
       //     reasoning: "reasoning",
       // };
 
-      console.log('Final match result:', replicateOutput);
+    //   console.log('Final match result:', replicateOutput);
 
       // Publish the result to Redis
-      await publishMatchResult(replicateOutput);
+    //   await publishMatchResult(replicateOutput);
 
   } catch (error:any) {
       console.error('Error matching job and resume:', error.response ? error.response.data : error.message);
