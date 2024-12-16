@@ -155,31 +155,24 @@ def add_job(job_id: str, ids: List[str], vectors: List[List[float]], payloads: L
     )
 
 # Search for jobs based on query embedding
-def search_jobs(query_embedding, section: str, top_k: int = 10, metadata_filters: dict = None):
+def search_jobs(query_embedding, section: str, top_k: int = 20, threshold: float = 0.7):
     filters = []
     
-    # Add filters based on metadata
-    if metadata_filters:
-        for key, value in metadata_filters.items():
-            filters.append(qdrant_models.FieldCondition(
-                key=key,
-                match=qdrant_models.MatchValue(value=value)
-            ))
-
-    # Filter by job section
-    filters.append(qdrant_models.FieldCondition(
-        key="section",
-        match=qdrant_models.MatchValue(value=section)
-    ))
+    if section:
+        filters.append(qdrant_models.FieldCondition(
+            key="section",
+            match=qdrant_models.MatchValue(value=section)
+        ))
 
     query_filter = qdrant_models.Filter(must=filters) if filters else None
 
-    # Perform the search
+    # Perform the search with more lenient parameters
     results = client.search(
         collection_name="JobCollection",
         query_vector=query_embedding,
         limit=top_k,
-        query_filter=query_filter
+        query_filter=query_filter,
+        score_threshold=threshold  # Add threshold parameter
     )
     return results
 

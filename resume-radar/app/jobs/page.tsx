@@ -144,7 +144,6 @@ export default function JobsPage() {
     debounce(async (term: string) => {
       setLoading(true);
       try {
-        // Convert search term to embedding
         const embeddingResponse = await fetch('http://localhost:5500/api/query-embed', {
           method: 'POST',
           headers: {
@@ -156,29 +155,53 @@ export default function JobsPage() {
         });
         const embeddingData = await embeddingResponse.json();
 
-        // Use the embedding to search jobs in the vector DB
-        const response = await fetch('http://localhost:5200/job/search', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query_embedding: embeddingData.embedding,
-            section: 'title',
-            top_k: 10
-          })
-        });
-        const data = await response.json();
-        const transformedJobs = Array.isArray(data.results) ? data.results.map((job: any) => ({
-          id: job.id || '',
-          jobId:job.payload?.jobId || '',
-          title: job.payload?.title || '',
-          company: job.payload?.company || '',
-          location: job.payload?.location || '',
-          description: job.payload?.description || '',
-          datePosted: job.payload?.datePosted || ''
-        })) : [];
+        // Search across multiple sections
+        const sections = ['title', 'description', 'company'];
+        const allResults = [];
 
+        for (const section of sections) {
+          const response = await fetch('http://localhost:5200/job/search', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              query_embedding: embeddingData.embedding,
+              section: section,
+              top_k: 20,
+              threshold: 0.5
+            })
+          });
+          const data = await response.json();
+          console.log(`Results for section ${section}:`, data.results);
+          if (Array.isArray(data.results)) {
+            allResults.push(...data.results);
+          }
+        }
+
+        console.log('All results before deduplication:', allResults.length);
+
+        // Remove duplicates based on job ID
+        const uniqueResults = Array.from(new Map(
+          allResults.map(item => [item.payload?.jobId, item])
+        ).values());
+
+        console.log('Unique results after deduplication:', uniqueResults.length);
+
+        // Sort by relevance score
+        const transformedJobs = uniqueResults
+          .sort((a, b) => b.score - a.score)
+          .map((job: any) => ({
+            id: job.id || '',
+            jobId: job.payload?.jobId || '',
+            title: job.payload?.title || '',
+            company: job.payload?.company || '',
+            location: job.payload?.location || '',
+            description: job.payload?.description || '',
+            datePosted: job.payload?.datePosted || ''
+          }));
+
+        console.log('Final transformed jobs:', transformedJobs.length);
         setJobs(transformedJobs);
       } catch (error) {
         console.error('Error searching jobs:', error);
@@ -299,12 +322,10 @@ export default function JobsPage() {
     }
   };
 
-  const filteredJobs = jobs?.filter(job => {
-    const companyName = typeof job.company === 'string' ? job.company : job.company?.name || '';
-    const jobTitle = typeof job.title === 'string' ? job.title : '';
-    return jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      companyName.toLowerCase().includes(searchTerm.toLowerCase());
-  }) || [];
+  const filteredJobs = jobs || [];
+
+  console.log('Jobs before filtering:', jobs);
+  console.log('Search term:', searchTerm);
 
   return (
     <div className="min-h-screen bg-gray-50">
