@@ -171,6 +171,20 @@ services:
       - postgresql
     ports:
       - "8080:8080"
+  
+  mongoDb:
+    image: mongo
+    container_name: mongoDB
+    environment:
+    - MONGODB_INITDB_ROOT_USERNAME=root
+    - MONGODB_INITDB_ROOT_PASSWORD=password
+    - MONGO_INITDB_DATABASE=mydatabase
+    restart: always
+    ports:
+    - "27017:27017"
+    volumes:
+    - ./mongoDb/data:/data/db
+
 
 volumes:
   redis-data:

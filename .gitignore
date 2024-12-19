@@ -42,3 +42,4 @@ Thumbs.db
 dist/
 build/
 postgresql_data/
+mongoDB/

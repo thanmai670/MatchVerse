@@ -1,0 +1,288 @@
+openapi: 3.0.0
+info:
+  title: MatchVerse API Gateway
+  description: API Gateway for the MatchVerse system, serving as the entry point for CRUD operations on Agents, Jobs, Resumes, and Matches. It also proxies requests to backend microservices.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:80
+    description: Local development server
+
+paths:
+  /api/agents:
+    post:
+      summary: Create a new agent
+      description: Create a new agent to track job search activity for a specific resume and job portal.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Agent'
+      responses:
+        '201':
+          description: Agent created successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+    
+    get:
+      summary: Get all agents
+      description: Returns a list of all agents for the authenticated user.
+      responses:
+        '200':
+          description: List of agents
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/agents/{id}:
+    get:
+      summary: Get an agent by ID
+      description: Returns a specific agent by its unique ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the agent to retrieve.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent details
+        '404':
+          description: Agent not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update an agent
+      description: Update the details of an existing agent.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the agent to update.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Agent'
+      responses:
+        '200':
+          description: Agent updated successfully
+        '404':
+          description: Agent not found
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Delete an agent
+      description: Delete an agent by its unique ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the agent to delete.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent deleted successfully
+        '404':
+          description: Agent not found
+        '401':
+          description: Unauthorized
+
+  /api/jobs:
+    get:
+      summary: Get all jobs
+      description: Returns a list of all jobs.
+      responses:
+        '200':
+          description: List of jobs
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/resumes:
+    post:
+      summary: Create a new resume
+      description: Upload and create a new resume.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Resume'
+      responses:
+        '201':
+          description: Resume created successfully
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+    get:
+      summary: Get all resumes
+      description: Returns a list of all resumes.
+      responses:
+        '200':
+          description: List of resumes
+        '401':
+          description: Unauthorized
+
+  /api/matches:
+    get:
+      summary: Get all matches
+      description: Returns a list of job-resume matches.
+      responses:
+        '200':
+          description: List of matches
+        '401':
+          description: Unauthorized
+
+  /jobs:
+    get:
+      summary: Proxy to Job Fetcher service
+      description: Proxies to the Job Fetcher Service for job listings.
+      responses:
+        '200':
+          description: List of jobs
+        '500':
+          description: Internal server error
+
+  /resume:
+    post:
+      summary: Proxy to Resume Analyzer service
+      description: Proxies to the Resume Analyzer Service for resume parsing.
+      responses:
+        '200':
+          description: Resume analyzed successfully
+        '500':
+          description: Internal server error
+
+  /match:
+    post:
+      summary: Proxy to Matching Engine service
+      description: Proxies to the Matching Engine Service to match resumes with jobs.
+      responses:
+        '200':
+          description: Match successful
+        '500':
+          description: Internal server error
+
+  /notify:
+    post:
+      summary: Proxy to Notification Service
+      description: Proxies to the Notification Service to send email notifications.
+      responses:
+        '200':
+          description: Notification sent successfully
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    Agent:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: The ID of the user who owns this agent.
+        resume_id:
+          type: string
+          description: The ID of the resume linked to this agent.
+        portal:
+          type: string
+          description: The job portal where this agent is searching.
+        status:
+          type: string
+          description: The current status of the agent (active, inactive).
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        jobId:
+          type: string
+        title:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        datePosted:
+          type: string
+
+    Resume:
+      type: object
+      properties:
+        user_id:
+          type: string
+        id:
+          type: string
+        personal_information:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+            github:
+              type: string
+            linkedin:
+              type: string
+        skills:
+          type: array
+          items:
+            type: string
+        education:
+          type: array
+          items:
+            type: string
+        work_experience:
+          type: array
+          items:
+            type: string
+        projects:
+          type: array
+          items:
+            type: string
+        certifications:
+          type: array
+          items:
+            type: string
+        unstructured_text_blocks:
+          type: array
+          items:
+            type: string
+
+    Match:
+      type: object
+      properties:
+        user_id:
+          type: string
+        id:
+          type: string
+        jobId:
+          type: string
+        resumeId:
+          type: string
+        score:
+          type: number
+        reasoning:
+          type: string
